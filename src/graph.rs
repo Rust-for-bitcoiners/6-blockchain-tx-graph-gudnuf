@@ -1,6 +1,10 @@
 #![allow(unused)]
-use std::{collections::{HashMap, HashSet, VecDeque}, hash::Hash, rc::Rc};
-
+use bitcoin::hash_types::Txid;
+use std::{
+    collections::{hash_map::Entry, HashMap, HashSet, VecDeque},
+    hash::Hash,
+    rc::Rc,
+};
 
 pub struct Graph<T> {
     // We have a set of nodes called Vertex set
@@ -14,48 +18,106 @@ pub struct Graph<T> {
 
 impl<T: Eq + PartialEq + Hash> Graph<T> {
     pub fn new() -> Graph<T> {
-        todo!();
+        Graph {
+            edges: HashMap::new(),
+        }
     }
 
     pub fn vertices(&self) -> Vec<Rc<T>> {
-        todo!();
+        self.edges.keys().map(|x| x.clone()).collect()
     }
 
     pub fn insert_vertex(&mut self, u: T) {
-        todo!();
+        self.edges.insert(Rc::new(u), HashSet::new());
     }
 
     pub fn insert_edge(&mut self, u: T, v: T) {
-        // node u can already be in the HashMap or it is not in the HashMap
-        todo!();
+        let u = &Rc::new(u);
+        let v = &Rc::new(v);
+
+        // Insert u if it doesn't exist
+        self.edges.entry(u.clone()).or_insert_with(HashSet::new);
+
+        // Insert v if it doesn't exist
+        self.edges.entry(v.clone()).or_insert_with(HashSet::new);
+
+        // Add the edge from u to v
+        self.edges.get_mut(u).unwrap().insert(v.clone());
     }
 
     pub fn remove_edge(&mut self, u: &T, v: &T) {
-        todo!();
+        let edge = self.edges.get_mut(u).unwrap();
+        edge.remove(v);
     }
 
     pub fn remove_vertex(&mut self, u: &T) {
-        todo!();
+        self.edges.remove(u);
+        // TODO: remove all edges that point to v
     }
 
     pub fn contains_vertex(&self, u: &T) -> bool {
-        todo!();
+        self.edges.contains_key(u)
     }
 
     pub fn contains_edge(&mut self, u: &T, v: &T) -> bool {
-        todo!();
+        match self.edges.get(u) {
+            Some(edges) => edges.contains(v),
+            None => false,
+        }
     }
 
     pub fn neighbors(&self, u: &T) -> Vec<Rc<T>> {
-        todo!();
+        let mut neighbors = Vec::new();
+        for (node, edges) in self.edges.iter() {
+            if edges.contains(u) {
+                neighbors.push(node.clone());
+            }
+        }
+        neighbors
     }
 
     pub fn path_exists_between(&self, u: &T, v: &T) -> bool {
+        let mut visited = HashSet::new();
+        let mut queue = VecDeque::new();
+
+        // Find the Rc<T> that matches u
+        if let Some(start) = self.edges.keys().find(|k| k.as_ref() == u) {
+            /* Add start node to the queue and mark it as visited */
+            queue.push_back(Rc::clone(start));
+            visited.insert(Rc::clone(start));
+
+            /* loop through the queue until we find v */
+            while let Some(node) = queue.pop_front() {
+                if node.as_ref() == v {
+                    return true;
+                }
+
+                if let Some(neighbors) = self.edges.get(&node) {
+                    for neighbor in neighbors {
+                        if !visited.contains(neighbor) {
+                            queue.push_back(Rc::clone(neighbor));
+                            visited.insert(Rc::clone(neighbor));
+                        }
+                    }
+                }
+            }
+        }
+
+        false
         // Use bfs or dfs
         // bfs requires a queue data structure refer https://doc.rust-lang.org/std/collections/struct.VecDeque.html
         // dfs requires recursion
         // in both cases keep track of visited nodes using HashSet
-        todo!();
+    }
+}
+
+impl<T: Eq + PartialEq + Hash + std::fmt::Debug> std::fmt::Debug for Graph<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "Graph {{")?;
+        for (vertex, edges) in &self.edges {
+            writeln!(f, "    {:?} -> {:?}", vertex, edges)?;
+        }
+        write!(f, "}}")
     }
 }
 
@@ -65,7 +127,6 @@ impl<T: Eq + PartialEq + Hash> Graph<T> {
 mod tests {
     use super::*;
     use quickcheck::{Arbitrary, Gen, QuickCheck};
-
     #[test]
     fn property_add_vertex_contains_vertex() {
         fn prop(val: i32) -> bool {
@@ -169,4 +230,3 @@ mod tests {
         assert!(graph.contains_vertex(&"C"));
     }
 }
-
