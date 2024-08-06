@@ -1,5 +1,31 @@
 # Assignment 6
 
+## How to run
+
+### Tests
+
+Make sure you have bitcoind in you PATH or export `BITCOIND_EXE` to point to the bitcoind executable.
+
+```bash
+cargo test
+```
+
+### Run
+
+Make sure you have bitcoind running in regtest mode and then create an `.env` file with the following content:
+
+```
+BITCOIN_RPC_URL=127.0.0.1:8332
+BITCOIN_RPC_USER=bitcoin
+BITCOIN_RPC_PASSWORD=password
+```
+
+Then run the program:
+
+````bash
+cargo run
+```
+
 ## Implementing Graph in Rust
 
 First implement the graph.rs file, make sure you pass all the tests.
@@ -18,3 +44,4 @@ You can take your time for this.
 
 Also learning to test like this is a valuable skill that you will require to build production ready
 bitcoin applications in Rust.
+````
